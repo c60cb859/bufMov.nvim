@@ -1,68 +1,122 @@
 local api = vim.api
 
--- Get current window data
--- Buffer ID
--- Windows ID
--- Tabpage ID
+local getCursorPosition = function(direction)
+  local cursor = {}
 
--- Get windows overview of all windwos
+  if ( direction == 'up' ) then
+    cursor.x = api.nvim_win_get_position(0)[2] + api.nvim_win_get_cursor(0)[2]
+    cursor.y = api.nvim_win_get_position(0)[1]
+  elseif ( direction == 'down' ) then
+    cursor.x = api.nvim_win_get_position(0)[2] + api.nvim_win_get_cursor(0)[2]
+    cursor.y = api.nvim_win_get_position(0)[1] + api.nvim_win_get_height(0)
+  elseif ( direction == 'left' ) then
+    cursor.x = api.nvim_win_get_position(0)[2]
+    cursor.y = api.nvim_win_get_position(0)[1] + api.nvim_win_get_cursor(0)[1]
+  elseif ( direction == 'right' ) then
+    cursor.x = api.nvim_win_get_position(0)[2] + api.nvim_win_get_width(0)
+    cursor.y = api.nvim_win_get_position(0)[1] + api.nvim_win_get_cursor(0)[1]
+  end
 
--- Deduce target window from cursor position and window positions
---
--- Get cursor position relative to window position, add to get absolute cursor position
---
--- nvim_win_set_buf({window}, {buffer})                      *nvim_win_set_buf()*
---                 Sets the current buffer in a window, without side effects
---
---                 Attributes: ~
---                     not allowed when |textlock| is active
---
---                 Parameters: ~
---                     {window}  Window handle, or 0 for current window
---                     {buffer}  Buffer handle
+  cursor.tab = api.nvim_get_current_tabpage()
 
+  return cursor
+end
 
-local M = {}
+local moveCursor = function(cursor, direction)
+  if ( direction == 'up' ) then
+    cursor.y = cursor.y - 1
+  elseif ( direction == 'down' ) then
+    cursor.y = cursor.y + 1
+  elseif ( direction == 'left' ) then
+    cursor.x = cursor.x - 1
+  elseif ( direction == 'right' ) then
+    cursor.x = cursor.x + 1
+  end
 
+  return cursor
+end
 
-M.getBuffer = function(direction)
-  -- Get current windows data --
-  local currentBuffer = api.nvim_get_current_buf()
-  local currentWindowNumber = api.nvim_get_current_win()
-  local currentCursor = api.nvim_win_get_cursor(0)
-  local currentWindowPos = api.nvim_win_get_position(0)
-  local currentCursorColumn = currentWindowPos[2] + currentCursor[2]
-  local currentCursorLine = currentWindowPos[1] + currentCursor[1]
-  local currentTab = api.nvim_get_current_tabpage()
+local cursorOnEdge = function(cursor, direction)
 
+  if ( direction == 'up' and cursor.y == 0 ) then
+    return true
+  elseif ( direction == 'down' and cursor.y == api.nvim_get_option('lines') - api.nvim_get_option('cmdheight') - 1 ) then
+    return true
+  elseif ( direction == 'left' and cursor.x == 0 ) then
+    return true
+  elseif ( direction == 'right' and cursor.x == api.nvim_get_option('columns') ) then
+    return true
+  end
 
-  print('--- Current ---')
-  print('Cursor: ' .. vim.inspect(currentCursor))
-  print('Cursor colum: ' .. currentCursorColumn)
-  print('Cursor line: ' .. currentCursorLine)
-  print('Buffer num: ' .. currentBuffer)
-  print('Tab: ' .. currentTab)
-  print('Window num: ' .. currentWindowNumber)
+  return false
+end
 
+local collisionWithWindow = function(cursor, window)
 
+  if ( cursor.x <= ( window.x + window.width ) and   -- checks if cursor is to the left of the window
+       cursor.x >= window.x and                      -- checks if cursor is to the right of the window
+       cursor.y <= ( window.y + window.height ) and  -- checks if the cursor is height than the window
+       cursor.y >= window.y and                      -- checks if the cursor is lower than the window
+       cursor.tab == window.tab ) then              -- checks if cursor and window is on the same tab
+    return true
+  end
+
+  return false
+end
+
+local getWindowList = function()
+  local windows = {}
   local windowList = api.nvim_list_wins()
 
-  for _, window in pairs(windowList) do
-    local windowCursor = api.nvim_win_get_cursor(window)
-    local buffer = api.nvim_win_get_buf(window)
-    local windowNumber = api.nvim_win_get_number(window)
-    local windowPosition = api.nvim_win_get_position(window)
-    local tabPage = api.nvim_win_get_tabpage(window)
+  for i, win in pairs(windowList) do
+    local window = {}
+    window.id = win
+    window.x = api.nvim_win_get_position(win)[2]
+    window.y = api.nvim_win_get_position(win)[1]
+    window.width = api.nvim_win_get_width(win)
+    window.height = api.nvim_win_get_height(win)
+    window.tab = api.nvim_win_get_tabpage(win)
 
-    print('---------------')
-    print('Window: ' .. window)
-    print('Buffer num: ' .. buffer)
-    print('Cursor: ' .. vim.inspect(windowCursor))
-    print('Window num: ' .. windowNumber)
-    print('Window pos: ' .. vim.inspect(windowPosition))
-    print('Tabpage: ' .. tabPage)
+    windows[i] = window
+  end
+
+  return windows
+end
+
+local collisionWithAnyWindow = function(cursor)
+
+  local windows = getWindowList()
+
+  for _, window in pairs(windows) do
+    if ( collisionWithWindow(cursor, window) ) then
+       return window
+     end
   end
 end
 
+local M = {}
+
+M.movBuf = function(direction)
+
+  local currentBuffer = api.nvim_get_current_buf()
+  local currentWindow = api.nvim_get_current_win()
+
+  local cursor = getCursorPosition(direction)
+
+  if ( cursorOnEdge(cursor, direction) ) then
+    return
+  end
+
+  local targetWindow = collisionWithAnyWindow(cursor)
+  while ( targetWindow.id == currentWindow ) do
+    cursor = moveCursor(cursor, direction)
+    targetWindow = collisionWithAnyWindow(cursor)
+  end
+
+  local targetBuffer = api.nvim_win_get_buf(targetWindow.id)
+  api.nvim_win_set_buf(targetWindow.id, currentBuffer)
+  api.nvim_win_set_buf(currentWindow, targetBuffer)
+  api.nvim_set_current_win(targetWindow.id)
+end
 
 return M
