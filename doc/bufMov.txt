@@ -1,0 +1,81 @@
+BUFMOV *bufMov*
+
+                           BUFMOV REFERENCE MANUAL~
+                               by c60cb859~
+
+
+bufMov offers a way to "move" buffers between windows, without changing the
+windows layout. Like moving bewteen windows, bufMov makes is possible to move
+the current buffer together with the cursor. Pushing the buffer in the target
+window into the original window.
+Like when moving between windows the cursor position is used to determine the
+window to move to.
+
+                                      Type |gO| to see the table of contents.
+
+==============================================================================
+
+EXAMPLES
+
+The following diagrams were illustrate the concept, by moving buffer One into
+the window on the right, while simultaneosly moving buffer Two into the
+window on the left.
+
+
+      ┌────────┬────────┐         ┌────────┬────────┐
+      │        │        │         │        │ |      │
+      │ |─►    │  Two   │         │        │  One   │
+      │        │        │         │        │        │
+      │  One   ├────────┤  ────►  │  Two   ├────────┤
+      │        │        │         │        │        │
+      │        │ Three  │         │        │ Three  │
+      │        │        │         │        │        │
+      └────────┴────────┘         └────────┴────────┘
+
+
+
+==============================================================================
+
+USAGE
+
+bufMov is very easy to use, is consist only of 4 commands, one for each
+direction. Making a key map would be the easies way to get quick access to
+them.
+
+vim way:
+>
+      vim.api.nvim_buf_set_keymap(0, "n", "<leader>j", ":MoveBufferDown<CR>", {noremap = true})
+      vim.api.nvim_buf_set_keymap(0, "n", "<leader>k", ":MoveBufferUp<CR>", {noremap = true})
+      vim.api.nvim_buf_set_keymap(0, "n", "<leader>h", ":MoveBufferLeft<CR>", {noremap = true})
+      vim.api.nvim_buf_set_keymap(0, "n", "<leader>l", ":MoveBufferRight<CR>", {noremap = true})
+<
+lua way:
+>
+      vim.api.nvim_buf_set_keymap(0, "n", "<leader>j", "<cmd>lua require('bufMov').movBuf('down')<CR>", {noremap = true})
+      vim.api.nvim_buf_set_keymap(0, "n", "<leader>k", "<cmd>lua require('bufMov').movBuf('up')<CR>", {noremap = true})
+      vim.api.nvim_buf_set_keymap(0, "n", "<leader>h", "<cmd>lua require('bufMov').movBuf('left')<CR>", {noremap = true})
+      vim.api.nvim_buf_set_keymap(0, "n", "<leader>l", "<cmd>lua require('bufMov').movBuf('right')<CR>", {noremap = true})
+<
+
+==============================================================================
+
+COMMANDS
+
+:MoveBufferUp                                                   *:MoveBufferUp*
+                Swap buffer in current window with the buffer in the window
+                above.
+
+:MoveBufferDown                                               *:MoveBufferDown*
+                Swap buffer in current window with the buffer in the window
+                below.
+
+:MoveBufferLeft                                               *:MoveBufferLeft*
+                Swap buffer in current window with the buffer in the window
+                on the left.
+
+:MoveBufferRight                                             *:MoveBufferRight*
+                Swap buffer in current window with the buffer in the window
+                on the right.
+
+
+ vim:tw=78:ts=8:ft=help:norl:
