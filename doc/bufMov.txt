@@ -1,4 +1,4 @@
-BUFMOV *bufMov*
+*bufMov.txt*
 
                            BUFMOV REFERENCE MANUAL~
                                by c60cb859~
@@ -14,8 +14,7 @@ window to move to.
                                       Type |gO| to see the table of contents.
 
 ==============================================================================
-
-EXAMPLES
+EXAMPLE                                                       *bufMov-example*
 
 The following diagrams were illustrate the concept, by moving buffer One into
 the window on the right, while simultaneosly moving buffer Two into the
@@ -35,8 +34,7 @@ window on the left.
 
 
 ==============================================================================
-
-USAGE
+URAGE                                                           *bufMov-usage*
 
 bufMov is very easy to use, is consist only of 4 commands, one for each
 direction. Making a key map would be the easies way to get quick access to
@@ -58,8 +56,7 @@ lua way:
 <
 
 ==============================================================================
-
-COMMANDS
+COMMANDS                                                     *movBuf-commands*
 
 :MoveBufferUp                                                   *:MoveBufferUp*
                 Swap buffer in current window with the buffer in the window
