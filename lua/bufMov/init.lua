@@ -93,25 +93,16 @@ local collisionWithAnyWindow = function(cursor)
     end
 end
 
-local values = function(t)
-    local i = 0
-    return function()
-        i = i + 1
-        return t[i]
-    end
-end
-
-local windowOptions = {
-    "number",
-    "relativenumber",
-    "list",
-}
-
-local getWindowOptions = function(window)
+local getAllWindowOptions = function(window)
     local options = {}
 
-    for option in values(windowOptions) do
-        options[option] = api.nvim_win_get_option(window, option)
+    local all_options = vim.api.nvim_get_all_options_info()
+    local v = vim.wo[window]
+
+    for key, val in pairs(all_options) do
+        if val.global_local == false and val.scope == "win" then
+            options[key] = v[key]
+        end
     end
 
     return options
@@ -119,7 +110,7 @@ end
 
 local setWindowOptions = function(window, options)
     for option, value in pairs(options) do
-        api.nvim_win_set_option(window, option, value)
+        pcall(api.nvim_win_set_option, window, option, value)
     end
 end
 
@@ -128,7 +119,7 @@ local M = {}
 M.movBuf = function(direction)
     local currentBuffer = api.nvim_get_current_buf()
     local currentWindow = api.nvim_get_current_win()
-    local currentWindowOptionr = getWindowOptions(currentWindow)
+    local currentWindowOptionr = getAllWindowOptions(currentWindow)
     local currentCursor = api.nvim_win_get_cursor(currentWindow)
 
     local cursor = getCursorPosition(direction)
@@ -144,7 +135,7 @@ M.movBuf = function(direction)
     end
 
     local targetBuffer = api.nvim_win_get_buf(targetWindow.id)
-    local targetWindowOptions = getWindowOptions(targetWindow.id)
+    local targetWindowOptions = getAllWindowOptions(targetWindow.id)
     local targetCursor = api.nvim_win_get_cursor(targetWindow.id)
 
     api.nvim_win_set_buf(targetWindow.id, currentBuffer)
