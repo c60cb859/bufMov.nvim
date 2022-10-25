@@ -156,7 +156,8 @@ M.movBuf = function(direction)
     api.nvim_win_set_cursor(currentWindow, targetCursor)
     api.nvim_win_set_cursor(targetWindow.id, currentCursor)
 
-    api.nvim_set_current_win(targetWindow.id)
+    -- This should check the 'textlock' before calling set_current_window
+    pcall(api.nvim_set_current_win, targetWindow.id)
 end
 
 return M
